@@ -1,8 +1,12 @@
-Description: 'This is my first template.'
+Parameters:
+  S3BucketName:
+    Description: 'This is the first template with parameter'
+    Type: 'String'
 Resources:
   S3Bucket2:
     Type: AWS::S3::Bucket
     Properties:
-      AccessControl: PublicRead
+      AccessControl: 'PublicRead'
+      BucketName: '!Ref S3BucketName'
       
 
