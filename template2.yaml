@@ -7,6 +7,6 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       AccessControl: 'PublicRead'
-      BucketName: '!Ref S3BucketName'
+      BucketName: !Ref 'S3BucketName'
       
 
