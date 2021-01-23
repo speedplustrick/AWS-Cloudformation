@@ -16,14 +16,27 @@ Resources:
         ErrorDocument: error.html
     DeletionPolicy: Retain
 
-  S3Bucket:
+  S3Bucket1:
     Type: AWS::S3::Bucket
     Properties:
       AccessControl: PublicRead
       WebsiteConfiguration:
         IndexDocument: index.html
         ErrorDocument: error.html
-    DeletionPolicy: Retain  
+    # DeletionPolicy: Retain  
+
+  S3Bucket3:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: 'T2.micro'
+      ImageId: 'ami-04b1ddd35fd71475a'  
+  S3Bucket3:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: PublicRead
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html     
 Outputs:
   WebsiteURL:
     Value: !GetAtt [S3Bucket, WebsiteURL]
