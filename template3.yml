@@ -1,0 +1,21 @@
+Parameters:
+  S3BucketName:
+    Description: 'Building a S3 bucket with parameter'
+    Type: 'String'
+
+Resources:
+  S3Bucket1:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: 'PublicRead'
+      BucketName: !Sub 'S3BucketName'
+
+Resources:
+  EC21:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-0915bcb5fa77e4892
+      InstanceType: t2.nano
+            
+
+         
