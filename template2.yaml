@@ -2,6 +2,11 @@ Parameters:
   S3BucketName:
     Description: 'This is the first template with parameter'
     Type: 'String'
+
+  S3Photon:
+    Description: 'Its Photon'
+    Type: 'String'
+
 Resources:
   S3Bucket2:
     Type: AWS::S3::Bucket
@@ -9,4 +14,15 @@ Resources:
       AccessControl: 'PublicRead'
       BucketName: !Ref 'S3BucketName'
       
+  S3Bucket22:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: 'PublicRead'
+      BucketName: !Sub 'balram-${S3BucketName}' 
+
+  S3Bucket33:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: 'PublicRead'
+      BucketName: !Sub '${S3Photon}balram-${S3BucketName}'       
 
