@@ -41,9 +41,11 @@ Resources:
         MinSize:
           Ref: MinSizeASG
         Tags:
-          Key: Name
-          Value: Dutch Cfn ASG
-          PropagateAtLaunch: 'true'
+          - Key: Name1
+            Value: Dutch Cfn ASG
+          - Key: Name2
+            Value: French Cfn ASG
+            PropagateAtLaunch: Boolean
         VPCZoneIdentifier:
           Ref: VPCZoneIdentifier
     LaunchConfig: 
