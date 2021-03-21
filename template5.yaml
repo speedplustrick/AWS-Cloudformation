@@ -52,7 +52,7 @@ Resources:
           - Key: Name
             Value: Dutch Cfn ASG
             PropagateAtLaunch: 'true'
-          - Key: Name
+          - Key: Dept
             Value: French Cfn ASG
             PropagateAtLaunch: 'true'
         VPCZoneIdentifier:
