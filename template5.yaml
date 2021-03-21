@@ -44,6 +44,8 @@ Resources:
         Tags:
           - Key: Name
             Value: Dutch Cfn ASG
+          - Key: Name
+            Value: French Cfn ASG
             PropagateAtLaunch: 'true'
         VPCZoneIdentifier:
           Ref: VPCZoneIdentifier
