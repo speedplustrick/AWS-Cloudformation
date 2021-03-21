@@ -20,6 +20,13 @@ Parameters:
   InstanceSecurityGroup:
     Description: "List of Security Group IDs"
     Type: List<AWS::EC2::SecurityGroup::Id>
+  ASGName:
+    Description: "Enter unique ASG name"
+    Type: String
+  LCGName:
+    Description: "Enter unique LCG name"
+    Type: String
+
 
 Mappings: 
   RegionMap: 
@@ -33,19 +40,19 @@ Resources:
       DependsOn: LaunchConfigfile
       Type: AWS::AutoScaling::AutoScalingGroup
       Properties:
-        AutoScalingGroupName: French Cfn Autoscaling Group
+        AutoScalingGroupName: !Ref "ASGName"
         DesiredCapacity:
           Ref: DesiredCapacityASG
-        LaunchConfigurationName: frenchCfnLaunchConfiguration 
+        LaunchConfigurationName: !Ref "LCGName" 
         MaxSize:
           Ref: MaxSizeASG
         MinSize:
           Ref: MinSizeASG
         Tags:
-          - Key: Name1
+          - Key: Name
             Value: Dutch Cfn ASG
             PropagateAtLaunch: 'true'
-          - Key: Name2
+          - Key: Name
             Value: French Cfn ASG
             PropagateAtLaunch: 'true'
         VPCZoneIdentifier:
@@ -60,5 +67,5 @@ Resources:
           Ref: "InstanceSecurityGroup"
         InstanceType: 
           Ref: "InstanceType"
-        LaunchConfigurationName: frenchCfnLaunchConfiguration 
+        LaunchConfigurationName: !Ref "LCGName"  
  
