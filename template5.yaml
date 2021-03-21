@@ -37,13 +37,12 @@ Mappings:
 
 Resources:
     AutoScalingGroup:
-      DependsOn: LaunchConfigfile
       Type: AWS::AutoScaling::AutoScalingGroup
       Properties:
         AutoScalingGroupName: !Ref "ASGName"
         DesiredCapacity:
           Ref: DesiredCapacityASG
-        LaunchConfigurationName: !Ref "LCGName" 
+        LaunchConfigurationName: !Ref "LaunchConfigfile" 
         MaxSize:
           Ref: MaxSizeASG
         MinSize:
