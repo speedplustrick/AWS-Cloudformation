@@ -30,6 +30,7 @@ Mappings:
 
 Resources:
     AutoScalingGroup:
+      DependsOn: LaunchConfig
       Type: AWS::AutoScaling::AutoScalingGroup
       Properties:
         AutoScalingGroupName: Dutch Cfn Autoscaling Group
@@ -41,11 +42,9 @@ Resources:
         MinSize:
           Ref: MinSizeASG
         Tags:
-          - Key: Name1
+          - Key: Name
             Value: Dutch Cfn ASG
-          - Key: Name2
-            Value: French Cfn ASG
-            PropagateAtLaunch: Boolean
+            PropagateAtLaunch: 'true'
         VPCZoneIdentifier:
           Ref: VPCZoneIdentifier
     LaunchConfig: 
