@@ -42,8 +42,8 @@ Resources:
         AutoScalingGroupName: !Ref ASGName
         DesiredCapacity: !Ref DesiredCapacityASG
         LaunchConfigurationName: !Ref LaunchConfigfile 
-        MaxSize: !Ref: MaxSizeASG
-        MinSize: !Ref: MinSizeASG
+        MaxSize: !Ref MaxSizeASG
+        MinSize: !Ref MinSizeASG
         Tags:
           - Key: Name
             Value: Dutch Cfn ASG
@@ -51,13 +51,13 @@ Resources:
           - Key: Dept
             Value: French Cfn ASG
             PropagateAtLaunch: 'true'
-        VPCZoneIdentifier: !Ref: VPCZoneIdentifier
+        VPCZoneIdentifier: !Ref VPCZoneIdentifier
     LaunchConfigfile: 
       Type: AWS::AutoScaling::LaunchConfiguration
       Properties: 
-        KeyName: !Ref: KeyName
+        KeyName: !Ref KeyName
         ImageId: !FindInMap [ RegionMap, !Ref "AWS::Region", HVM64 ]
-        SecurityGroups: !Ref: InstanceSecurityGroup
-        InstanceType: !Ref: InstanceType
+        SecurityGroups: !Ref InstanceSecurityGroup
+        InstanceType: !Ref InstanceType
         LaunchConfigurationName: !Ref LCGName  
  
