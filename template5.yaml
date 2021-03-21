@@ -30,13 +30,13 @@ Mappings:
 
 Resources:
     AutoScalingGroup:
-      DependsOn: LaunchConfig
+      DependsOn: LaunchConfigfile
       Type: AWS::AutoScaling::AutoScalingGroup
       Properties:
-        AutoScalingGroupName: Dutch Cfn Autoscaling Group
+        AutoScalingGroupName: French Cfn Autoscaling Group
         DesiredCapacity:
           Ref: DesiredCapacityASG
-        LaunchConfigurationName: dutchCfnLaunchConfiguration 
+        LaunchConfigurationName: frenchCfnLaunchConfiguration 
         MaxSize:
           Ref: MaxSizeASG
         MinSize:
@@ -44,12 +44,13 @@ Resources:
         Tags:
           - Key: Name1
             Value: Dutch Cfn ASG
+            PropagateAtLaunch: 'true'
           - Key: Name2
             Value: French Cfn ASG
             PropagateAtLaunch: 'true'
         VPCZoneIdentifier:
           Ref: VPCZoneIdentifier
-    LaunchConfig: 
+    LaunchConfigfile: 
       Type: AWS::AutoScaling::LaunchConfiguration
       Properties: 
         KeyName: 
@@ -59,5 +60,5 @@ Resources:
           Ref: "InstanceSecurityGroup"
         InstanceType: 
           Ref: "InstanceType"
-        LaunchConfigurationName: dutchCfnLaunchConfiguration 
+        LaunchConfigurationName: frenchCfnLaunchConfiguration 
  
