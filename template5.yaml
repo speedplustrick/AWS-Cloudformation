@@ -11,19 +11,23 @@ Parameters:
   VPCZoneIdentifier:
     Description: "List the Subnet Ids of the instances"
     Type: List<AWS::EC2::Subnet::Id>
+  VPC:
+    Description: "List all the available VPC"
+    Type: List<AWS::EC2::VPC::Id>  
   KeyName:
     Description: "EC2 instance key name"
     Type: String
   InstanceType:
     Description: "EC2 instance type"
     Type: String
-
   ASGName:
     Description: "Enter unique ASG name"
     Type: String
   LCGName:
     Description: "Enter unique LCG name"
     Type: String
+  
+
 
 Mappings: 
   RegionMap: 
@@ -61,11 +65,12 @@ Resources:
       Type: AWS::EC2::SecurityGroup
       Properties:
         GroupDescription: Allow all traffic
-        GroupName: SGfrench        
+        GroupName: SGfrench  
+        VpcId: !Ref VPC      
         SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: -1
-          ToPort: -1
+          FromPort: 80
+          ToPort: 80
           CidrIp: 0.0.0.0/0  
         SecurityGroupEgress:
         - IpProtocol: tcp
