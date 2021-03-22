@@ -38,10 +38,10 @@ Mappings:
       HVM64: ami-089c6f2e3866f0f14 
 
 Resources:
-    AutoScalingGroup:
-      Type: AWS::AutoScaling::AutoScalingGroup
-      Properties:
-        AutoScalingGroupName: !Ref ASGName
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: !Ref ASGName
         DesiredCapacity: !Ref DesiredCapacityASG
         LaunchConfigurationName: !Ref LaunchConfigfile 
         MaxSize: !Ref MaxSizeASG
@@ -53,20 +53,20 @@ Resources:
          - Key: Dept
            Value: French Cfn ASG
            PropagateAtLaunch: 'true'
-        VPCZoneIdentifier: !Ref VPCZoneIdentifier
-    LaunchConfigfile: 
-      Type: AWS::AutoScaling::LaunchConfiguration
-      Properties: 
-        KeyName: !Ref KeyName
+        VPCZoneIdentifier: !Ref VPCZoneIdentifier  
+  LaunchConfigfile: 
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties: 
+      KeyName: !Ref KeyName
         ImageId: !FindInMap [ RegionMap, !Ref "AWS::Region", HVM64 ]
         SecurityGroups: 
          - !Ref InstanceSecurityGroup
         InstanceType: !Ref InstanceType
         LaunchConfigurationName: !Ref LCGName  
-    InstanceSecurityGroup:
-      Type: AWS::EC2::SecurityGroup
-      Properties:
-        GroupDescription: Allow all traffic
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow all traffic
         GroupName: !Ref SGroupName  
         VpcId: !Ref VPC      
         SecurityGroupIngress:
