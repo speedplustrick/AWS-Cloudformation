@@ -12,7 +12,7 @@ Parameters:
     Description: "List the Subnet Ids of the instances"
     Type: List<AWS::EC2::Subnet::Id>
   VPC:
-    Description: "List all the available VPC"
+    Description: "Enter VPC ID"
     Type: String 
   KeyName:
     Description: "EC2 instance key name"
@@ -25,16 +25,17 @@ Parameters:
     Type: String
   LCGName:
     Description: "Enter unique LCG name"
-    Type: String
-  
-
+    Type: String 
+  SGroupName:
+    Description: "Enter security group name"
+    Type: String 
 
 Mappings: 
   RegionMap: 
     us-east-1: 
-      HVM64: "ami-0533f2ba8a1995cf9"
-    us-east-1: 
-      HVM64: "ami-0533f2ba8a1995cf9"
+      HVM64: ami-0533f2ba8a1995cf9
+    us-east-2:
+      HVM64: ami-089c6f2e3866f0f14 
 
 Resources:
     AutoScalingGroup:
@@ -66,7 +67,7 @@ Resources:
       Type: AWS::EC2::SecurityGroup
       Properties:
         GroupDescription: Allow all traffic
-        GroupName: SGfrench  
+        GroupName: !Ref SGroupName  
         VpcId: !Ref VPC      
         SecurityGroupIngress:
          - IpProtocol: tcp
