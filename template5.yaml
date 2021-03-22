@@ -46,12 +46,12 @@ Resources:
         MaxSize: !Ref MaxSizeASG
         MinSize: !Ref MinSizeASG
         Tags:
-           - Key: Name
-             Value: Dutch Cfn ASG
-             PropagateAtLaunch: 'true'
-           - Key: Dept
-             Value: French Cfn ASG
-             PropagateAtLaunch: 'true'
+          - Key: Name
+            Value: Dutch Cfn ASG
+            PropagateAtLaunch: 'true'
+          - Key: Dept
+           Value: French Cfn ASG
+           PropagateAtLaunch: 'true'
         VPCZoneIdentifier: !Ref VPCZoneIdentifier
     LaunchConfigfile: 
       Type: AWS::AutoScaling::LaunchConfiguration
