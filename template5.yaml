@@ -61,7 +61,7 @@ Resources:
       Type: AWS::EC2::SecurityGroup
       Properties:
         GroupDescription: Existing Group
-        SecurityGroupIds: !Ref: sg-067b874e
+        SecurityGroupIds: !Ref sg-067b874e
           
 
  
