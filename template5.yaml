@@ -46,12 +46,12 @@ Resources:
         MaxSize: !Ref MaxSizeASG
         MinSize: !Ref MinSizeASG
         Tags:
-          - Key: Name
-            Value: Dutch Cfn ASG
-            PropagateAtLaunch: 'true'
-          - Key: Dept
-            Value: French Cfn ASG
-            PropagateAtLaunch: 'true'
+           - Key: Name
+             Value: Dutch Cfn ASG
+             PropagateAtLaunch: 'true'
+           - Key: Dept
+             Value: French Cfn ASG
+             PropagateAtLaunch: 'true'
         VPCZoneIdentifier: !Ref VPCZoneIdentifier
     LaunchConfigfile: 
       Type: AWS::AutoScaling::LaunchConfiguration
@@ -59,7 +59,7 @@ Resources:
         KeyName: !Ref KeyName
         ImageId: !FindInMap [ RegionMap, !Ref "AWS::Region", HVM64 ]
         SecurityGroups: 
-        - !Ref InstanceSecurityGroup
+         - !Ref InstanceSecurityGroup
         InstanceType: !Ref InstanceType
         LaunchConfigurationName: !Ref LCGName  
     InstanceSecurityGroup:
@@ -69,19 +69,19 @@ Resources:
         GroupName: SGfrench  
         VpcId: !Ref VPC      
         SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
-          CidrIp: 0.0.0.0/0 
-        - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          CidrIp: 0.0.0.0/0   
+         - IpProtocol: tcp
+           FromPort: 80
+           ToPort: 80
+           CidrIp: 0.0.0.0/0 
+         - IpProtocol: tcp
+           FromPort: 443
+           ToPort: 443
+           CidrIp: 0.0.0.0/0   
         SecurityGroupEgress:
-        - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
-          CidrIp: 0.0.0.0/0  
+         - IpProtocol: tcp
+           FromPort: 80
+           ToPort: 80
+           CidrIp: 0.0.0.0/0  
           
 
  
