@@ -58,9 +58,9 @@ Resources:
         InstanceType: !Ref InstanceType
         LaunchConfigurationName: !Ref LCGName  
     InstanceSecurityGroup:
-      Type: AWS::EC2::Instance
+      Type: AWS::EC2::SecurityGroup
       Properties:
-        GroupDescription: Existing Groups
+        GroupDescription: Existing Group
         SecurityGroupIds: !Ref: sg-067b874e
           
 
