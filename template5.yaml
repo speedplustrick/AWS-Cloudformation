@@ -46,10 +46,10 @@ Resources:
         MaxSize: !Ref MaxSizeASG
         MinSize: !Ref MinSizeASG
         Tags:
-          - Key: Name
-            Value: Dutch Cfn ASG
-            PropagateAtLaunch: 'true'
-          - Key: Dept
+         - Key: Name
+           Value: Dutch Cfn ASG
+           PropagateAtLaunch: 'true'
+         - Key: Dept
            Value: French Cfn ASG
            PropagateAtLaunch: 'true'
         VPCZoneIdentifier: !Ref VPCZoneIdentifier
