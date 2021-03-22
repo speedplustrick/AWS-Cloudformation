@@ -17,16 +17,13 @@ Parameters:
   InstanceType:
     Description: "EC2 instance type"
     Type: String
-  InstanceSecurityGroup:
-    Description: "List of Security Group IDs"
-    Type: List<AWS::EC2::SecurityGroup::Id>
+
   ASGName:
     Description: "Enter unique ASG name"
     Type: String
   LCGName:
     Description: "Enter unique LCG name"
     Type: String
-
 
 Mappings: 
   RegionMap: 
@@ -60,4 +57,11 @@ Resources:
         SecurityGroups: !Ref InstanceSecurityGroup
         InstanceType: !Ref InstanceType
         LaunchConfigurationName: !Ref LCGName  
+    InstanceSecurityGroup:
+      Type: AWS::EC2::Instance
+      Properties:
+        GroupDescription: Existing Groups
+        SecurityGroupIds: !Ref: sg-067b874e
+          
+
  
