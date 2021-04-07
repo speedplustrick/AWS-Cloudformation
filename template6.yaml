@@ -113,11 +113,14 @@ Resources:
     Properties:
       Name: State-ALB
       Scheme: internet-facing
+      LoadBalancerAttributes: 
+        - Key: deletion_protection.enabled
+          Value: false 
       Type: application
       Subnets: 
         - !Ref PublicSubnet1
         - !Ref PublicSubnet2         
-      SecurityGroupIds: 
+      SecurityGroups: 
         - sg-01f4c7f23d300704c
       IpAddressType: ipv4
 
@@ -127,24 +130,69 @@ Resources:
       LoadBalancerArn: !Ref ApplicationLoadBalancer
       Port: 80
       Protocol: HTTP
-      DefaultActions: 
-      -  Order: 1
-      RedirectConfig:
-        Protocol: HTTPS
-        Port: 443
-        Host: "#{host}"
-        Path: /#{path}
-        Query: "#{query}"
-        StatusCode: HTTP_301
+      DefaultActions:
+        - Type: "redirect" 
+          RedirectConfig:
+            Protocol: "HTTPS"
+            Port: 443
+            Host: "#{host}"
+            Path: "/new/#{path}"
+            Query: "#{query}"
+            StatusCode: "HTTP_301"
 
   HTTPSListener:
-      Type: AWS::ElasticLoadBalancingV2::Listener
-      Properties:
-        LoadBalancerArn: !Ref ApplicationLoadBalancer
-        Port: 443
-        Protocol: HTTPS
-        Certificates: 
-        -  CertificateARN: arn:aws:acm:ap-south-1:640393631002:certificate/d9c2e954-d4f8-406a-bbd3-e265fbe2c197
-        DefaultActions:
-        -  Order: 1
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 443
+      Protocol: HTTPS
+      Certificates: 
+      - CertificateARN: arn:aws:acm:ap-south-1:640393631002:certificate/d9c2e954-d4f8-406a-bbd3-e265fbe2c197
+      DefaultActions:
+      - Order: 1
         TargetGroupArn: !Ref StateTargetGroup
+        Type: "forward"
+
+  
+  ListS3BucketsInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+      - Ref: ListS3BucketsRole
+  ListS3BucketsPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: ListS3BucketsPolicy
+      PolicyDocument:
+        Statement:
+        - Effect: Allow
+          Action:
+          - s3:List*
+          Resource: "*"
+      Roles:
+      - Ref: ListS3BucketsRole
+  ListS3BucketsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - ec2.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"      
+  S3WritableRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /    
