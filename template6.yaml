@@ -28,9 +28,6 @@ Parameters:
   ASGName:
     Description: "Enter unique ASG name"
     Type: String
-  LCGName:
-    Description: "Enter unique LCG name"
-    Type: String 
   EC2SecurityGroupName:
     Description: "Enter security group name"
     Type: String 
@@ -66,7 +63,7 @@ Resources:
       SecurityGroups: 
         - !Ref InstanceSecurityGroup
       InstanceType: !Ref InstanceType
-      LaunchConfigurationName: !Ref LCGName  
+      IamInstanceProfile: !Ref ListS3BucketsInstanceProfile
 
   InstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -175,6 +172,8 @@ Resources:
   ListS3BucketsRole:
     Type: AWS::IAM::Role
     Properties:
+      ManagedPolicyArns: 
+      - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -185,14 +184,3 @@ Resources:
           Action:
           - sts:AssumeRole
       Path: "/"      
-  S3WritableRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: ec2.amazonaws.com
-            Action: sts:AssumeRole
-      Path: /    
