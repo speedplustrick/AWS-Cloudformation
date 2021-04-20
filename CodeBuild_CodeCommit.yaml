@@ -1,0 +1,170 @@
+Parameters:
+  ApplicationRepoName:
+    Type: String
+    Description: Name of the Repo 
+  
+  ArtifactsLocationsS3:
+    Type: String
+    Description: Name of the s3 Bucket
+
+
+
+Resources:
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      ServiceRole: !GetAtt [CodeBuildServiceRole, ARN]
+      Artifacts: 
+        Type: S3 
+        Location: !Ref ArtifactsLocationsS3
+        Name: CodeBuildProject-${AWS::StackName}
+        Environment: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/ubuntu-base
+      Source: 
+        Location: https://git-codecommit.us-east-1.amazonaws.com/v1/repos/DopplerRepo
+        Type: CODECOMMIT
+      TimeoutInMinutes: 15
+      Tags:
+        - Key: Name
+        - Value: CodeBuildProject-${AWS::StackName}
+
+##Roles##
+  CodeBuildServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - 
+            Action: ['sts:AssumeRole']
+            Effect: Allow
+            Principal:
+              Service: [codebuild.amazonaws.com]
+        Version: '2012-10-17'
+      Path: /
+      Policies:
+        -
+          PolicyName: "S3AccessList"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Effect: "Allow"
+                Action:
+                  - "s3:ListBucket"
+                Resource: "*"
+
+  CodePipelineRole:
+    Type: "AWS::IAM::Role"
+    Properties: 
+      AssumeRolePolicyDocument:
+        Statement: 
+          -
+            Effect: "Allow"
+            Principal: 
+              Service: 
+                - "codepipeline.amazonaws.com"
+            Action: 
+              - "sts: AssumeRole"
+      Path: /
+      Policies:
+        - 
+          PolicyName: "CodepipelineCICDAccessPolicy"
+          PolicyDocument: 
+            Version: "2012-10-17"
+            Statement:
+            - 
+            Effect: Allow
+            Action: 
+              - "s3:DeleteObject"
+              - "s3:GetObject"
+              - "s3:GetObjectVersion"
+              - "s3:ListBucket"
+              - "s3:PutObject"
+              - "s3:GetBucketPolicy"
+              - "s3:GetBucketVersioning"
+            Resource:
+              - !Sub arn:aws:s3:::${rArtifactStoreS3Location}
+              - !Sub arn:aws:s3:::${rArtifactS3Bucket}/*  
+
+        - 
+          PolicyName: "SNSPublish"  
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+            - 
+            Effect: Allow 
+            Action: 
+              - "sns:Publish"
+            Resource: '*' 
+
+        - 
+          PolicyName: "CodeCommitAccess"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+            -
+            Effect: "Allow"
+            Action: 
+              - "codecommit:ListBranches"
+              - "codecommit:ListRepositories"
+              - "codecommit:BatchGetRepositories"
+              - "codecommit:Get*"
+              - "codecommit:GitPull"
+              - "codecommit:UploadArchive"
+            Resource: !Sub "arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:${ApplicationRepoName}" 
+
+        - 
+          PolicyName: "CodeBuildAccess"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+            - 
+            Effect: "Allow"
+            Action:
+              - "codebuild:StartBuild"
+              - "codebuild:BatchGetBuilds"
+            Resource: !GetAtt CodeBuildProject
+          
+##Pipeline##
+  DeployPipeline:
+    Type: AWS::CodePipline::Pipline
+    Properties: 
+      Name: !Sub CICDPipe-${AWS::StackName}
+      RoleArn: !GetAtt [CodePipelineRole,Arn]
+      Stages:  
+        - Name: Source
+          Actions:
+            - Name: ApplicationSource
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Version: "1"
+                Provider: CodeCommit
+              OutputArtifacts: 
+                - Name: ApplicationOutput
+              Configuration:
+                BranchName: 'master'
+                RepositoryName: !Ref ApplicationRepoName
+              RunOrder: 1
+        - Name: Build 
+          Actions:
+            - Name: CodeBuild
+              InputArtifacts: 
+                - Name: ApplicationOutput
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              OutputArtifacts: 
+                - Name: RestAppArtifact
+              Configuration: 
+                ProjectName: !Ref CodeBuildProject
+              RunOrder: 1
+      ArtifactStore:
+        Type: s3
+        Location: !Ref ArtifactsLocationsS3 
+
+
+                        
