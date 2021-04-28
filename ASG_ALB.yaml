@@ -1,0 +1,104 @@
+Description: 
+  This template deploys an EC2 using launch configuration of ASG with ALB integrated.
+
+Parameters:
+  KeyPairName:
+    Type: String
+  InstanceImageId:
+    Type: String
+  VPC:
+    Description: "Enter VPC ID"
+    Type: String
+  VPCZoneIdentifier:
+    Description: "List the Subnet Ids of the instances"
+    Type: List<AWS::EC2::Subnet::Id>  
+  PublicSubnet1:
+    Type: String
+    Default: subnet-ID
+  PublicSubnet2:
+    Type: String
+    Default: subnet-ID   
+    
+Resources:
+  AutoScalingLaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties: 
+      InstanceType: t2.nano
+      KeyName: !Ref KeyPairName
+      ImageId: !Ref InstanceImageId
+      SecurityGroups: 
+        - !Ref InstanceSecurityGroup
+
+  ##SecurityGroup##
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow SSH and HTTP
+      VpcId: !Ref VPC 
+      SecurityGroupIngress: 
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0  
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0  
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0       
+
+  ##TargetGroup##
+  BoomTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: "/"
+      Port: 80
+      Protocol: HTTP
+      HealthCheckPort: traffic-port
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      UnhealthyThresholdCount: 2
+      TargetType: instance
+      Matcher:
+        HttpCode: "200"
+      HealthyThresholdCount: 5
+      VpcId: !Ref VPC
+      HealthCheckEnabled: "true"
+
+  ##ALB##
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: SonicALB
+      Scheme: internet-facing
+      Type: application
+      Subnets: 
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2         
+      IpAddressType: ipv4
+
+  ##Listeners##
+  HTTPListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Order: 1
+          TargetGroupArn: !Ref BoomTargetGroup
+          Type: "forward"
+
+    #ASG#
+  SonicASG:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      MinSize: 1
+      MaxSize: 2
+      DesiredCapacity: 1
+      LaunchConfigurationName: !Ref AutoScalingLaunchConfig
+      VPCZoneIdentifier: !Ref VPCZoneIdentifier              
