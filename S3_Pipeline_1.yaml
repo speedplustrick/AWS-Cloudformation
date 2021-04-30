@@ -1,0 +1,199 @@
+Description: Create a pipeline that deploys HTML code to your current S3 website bucket.
+
+##Parameters##
+Parameters:
+  CodeCommitRepoName:
+    Type: String
+    Description: Name of the Repo 
+  RepoBranch:
+    Type: String
+    Description: 'Branch to pull code from'
+    Default: 'main'
+
+  WebsiteBucketName:
+    Type: String
+    Description: 'S3 bucket to copy source files'
+
+##Resources##
+Resources:
+  ArtifactsBucketS3:
+    Type: AWS::S3::Bucket 
+    Properties:
+      BucketName: !Sub "storeartifact-${AWS::StackName}"
+
+##IAMRoles##
+  CodePipelineServiceRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: !Sub "CodePipelineRole-${AWS::StackName}"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              Service:
+                - "codepipeline.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: /
+      Policies:
+        -
+          PolicyName: "S3AccessList"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Effect: "Allow"
+                Action:
+                  - "s3:ListBucket"
+                Resource: "*"
+        -
+          PolicyName: "S3Access"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Effect: "Allow"
+                Action:
+                  - "s3:DeleteObject"
+                  - "s3:GetObject"
+                  - "s3:GetObjectVersion"
+                  - "s3:PutObject"
+                  - "s3:GetBucketPolicy"
+                  - "s3:GetBucketVersioning"
+                Resource:
+                  - !Sub arn:aws:s3:::${ArtifactsBucketS3}
+                  - !Sub arn:aws:s3:::${ArtifactsBucketS3}/*
+        - 
+          PolicyName: "CodeCommitAccess"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Effect: "Allow"
+                Action: 
+                  - "codecommit:ListBranches"
+                  - "codecommit:ListRepositories"
+                  - "codecommit:BatchGetRepositories"
+                  - "codecommit:Get*"
+                  - "codecommit:GitPull"
+                  - "codecommit:UploadArchive"
+                Resource: !Sub "arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:${CodeCommitRepoName}"
+        -
+          PolicyName: "CodeBuildAccess"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Effect: "Allow"
+                Action:
+                  - "codebuild:StartBuild"
+                  - "codebuild:BatchGetBuilds"
+                Resource: !GetAtt CodeBuildCopyToS3.Arn
+
+  CodeBuildCopyToS3Role:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: !Sub "codebuildrole-${AWS::StackName}"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              Service:
+                - "codebuild.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: /
+      Policies:
+        -
+          PolicyName: "S3Access"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Effect: "Allow"
+                Action:
+                  - "s3:*"
+                Resource:
+                  - !Sub "arn:aws:s3:::${WebsiteBucketName}"
+                  - !Sub "arn:aws:s3:::${WebsiteBucketName}/*"
+                  - !Sub "arn:aws:s3:::${ArtifactsBucketS3}"
+                  - !Sub "arn:aws:s3:::${ArtifactsBucketS3}/*"
+        -
+          PolicyName: "CWLogsAccess"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Sid: Stmt1619808923492
+                Effect: "Allow"
+                Action:
+                  - logs:*
+                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/*"                  
+
+##CodeBuild##
+  CodeBuildCopyToS3:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub BuildCopyToS3-${AWS::StackName}
+      Description: Build to copy files to S3
+      ServiceRole: !GetAtt CodeBuildCopyToS3Role.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:3.0
+        EnvironmentVariables:
+          - Name: WEBSITEBUCKET
+            Type: PLAINTEXT
+            Value: !Ref WebsiteBucketName
+      Source: 
+        Type: CODEPIPELINE       
+      TimeoutInMinutes: 15
+      Tags:
+        - Key: Name
+          Value: !Sub BuildCopyToS3-${AWS::StackName}
+
+##CodePipeline##
+  DeployPipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: !Sub deploypipeline-${AWS::StackName}
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ArtifactsBucketS3
+      RestartExecutionOnUpdate: true
+      RoleArn: !GetAtt CodePipelineServiceRole.Arn
+      Stages:
+        - Name: Source
+          Actions: 
+            - Name: CodeCommitSource
+              ActionTypeId: 
+                Category: Source
+                Owner: AWS
+                Version: "1"
+                Provider: CodeCommit
+              OutputArtifacts: 
+                - Name: CCSourceOutput
+              Configuration: 
+                BranchName: !Ref RepoBranch
+                RepositoryName: !Ref CodeCommitRepoName
+              RunOrder: 1  
+        - Name: DeployToS3
+          Actions:
+            - Name: DeployToS3
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: "1"
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref CodeBuildCopyToS3
+              InputArtifacts:
+                - Name: CCSourceOutput
+              RunOrder: 1              
+
