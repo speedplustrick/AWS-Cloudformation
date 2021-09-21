@@ -1,0 +1,191 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Creates an S3 bucket configured for hosting a static website and add it to cloudfront. Dynamic bucket name, S3 Public Access Block, S3 encryption enabled, SSL Policy added.
+
+
+### Metadata
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Website Parameters'
+      Parameters:
+      - pSiteName
+      - pCreateWWWSite
+    - Label:
+        default: 'CloudFront Config'
+      Parameters:
+      - pDefaultRootObject
+      - pAllowedMethods
+      - pACMCertificateArn
+      - pCloudFrontPriceClass
+
+
+### Parameters
+Parameters:
+  pSiteName:
+    Description: 'The list of sites to deploy'
+    Type: CommaDelimitedList
+  pCreateWWWSite:
+    Description: 'Deploy a www version of the site that redirects to the main website'
+    Type: String
+    Default: 'No'
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+  pDefaultRootObject:
+    Type: String
+    Description: 'The default root object of the website'
+    Default: 'index.html'
+  pAllowedMethods:
+    Type: CommaDelimitedList
+    Description: "Methods that CloudFront should cache"
+    AllowedValues:
+      - 'GET,HEAD'
+      - 'GET,HEAD,OPTIONS'
+  pACMCertificateArn:
+    Description: 'Arn of the ACM Certificate to deploy on CloudFront (US-EAST-1 only)'
+    Type: String
+  pCloudFrontPriceClass:
+    Description: 'Price class of the CloudFront distribution'
+    Type: String
+    Default: 'PriceClass_All'
+    AllowedValues:
+      - 'PriceClass_All'
+      - 'PriceClass_200'
+      - 'PriceClass_100'
+
+
+### Conditions
+Conditions:
+  cCreateWWWSite: !Equals [!Ref pCreateWWWSite, 'Yes']
+
+
+### Resources
+Resources:
+  ### S3
+  rStaticS3Site:
+    Type: AWS::S3::Bucket
+    Properties:
+      
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: 'true'
+        IgnorePublicAcls: 'true'
+        BlockPublicPolicy: 'true'
+        RestrictPublicBuckets: 'true'
+      BucketEncryption:  
+        ServerSideEncryptionConfiguration: 
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  rWWWS3Site:
+    Type: AWS::S3::Bucket
+    Condition: cCreateWWWSite
+    Properties:
+      AccessControl: PublicRead
+      BucketName: !Join ['', ['www.', !Select [0, !Ref pSiteName]]]
+      WebsiteConfiguration:
+        RedirectAllRequestsTo:
+          HostName: !Select [0, !Ref pSiteName]
+          Protocol: https
+
+  rStaticS3SiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref rStaticS3Site
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: SecureConnection
+            Effect: Deny
+            Principal: '*'
+            Action: s3:*
+            Resource:
+              - !Sub 'arn:aws:s3:::${rStaticS3Site}'
+              - !Sub 'arn:aws:s3:::${rStaticS3Site}/*'
+            Condition: 
+              Bool:
+                aws:SecureTransport: 'false'
+          - Sid: PublicReadGetObject
+            Effect: Allow
+            Action:
+            - s3:GetObject
+            Resource: !Join ['', ['arn:aws:s3:::', !Ref rStaticS3Site, '/*']]
+            Principal:
+              CanonicalUser: !GetAtt rCloudFrontOAI.S3CanonicalUserId
+
+
+  ### CloudFront
+  rStaticS3SiteCloudFront:
+    Type: "AWS::CloudFront::Distribution"
+    # DependsOn: rStaticS3Site
+    Properties:
+      DistributionConfig:
+        Aliases: !Ref pSiteName
+        Comment: !Join ['', ['Distribution for ', !Select [0, !Ref pSiteName]]]
+        CustomErrorResponses:
+          - ErrorCachingMinTTL: 300
+            ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: '/index.html'
+          - ErrorCachingMinTTL: 300
+            ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: '/index.html'
+        DefaultCacheBehavior:
+          AllowedMethods: !Ref pAllowedMethods
+          CachedMethods:
+            - GET
+            - HEAD
+          Compress: True
+          TargetOriginId: S3Origin
+          ForwardedValues:
+            QueryString: True
+            Cookies:
+              Forward: all
+          ViewerProtocolPolicy: redirect-to-https
+        DefaultRootObject: !Ref pDefaultRootObject
+        Enabled: True
+        HttpVersion: http2
+        Origins:
+        - DomainName: !GetAtt rStaticS3Site.DomainName
+          Id: S3Origin
+          S3OriginConfig:
+            OriginAccessIdentity: !Join ["", ["origin-access-identity/cloudfront/", !Ref rCloudFrontOAI]]
+        PriceClass: !Ref pCloudFrontPriceClass
+        ViewerCertificate:
+          AcmCertificateArn: !Ref pACMCertificateArn
+          MinimumProtocolVersion: TLSv1.1_2016
+          SslSupportMethod: sni-only
+      Tags:
+        - Key: Name
+          Value: !Select [0, !Ref pSiteName]
+
+  rCloudFrontOAI:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties: 
+      CloudFrontOriginAccessIdentityConfig: 
+        Comment: !Join ["", ["CloudFront-OAI-", !Select [0, !Ref pSiteName]]]
+
+
+### Outputs
+Outputs:
+  oTemplateID:
+    Description: 'BuildServerless Template ID'
+    Value: 's3-static-website'
+  oTemplateVersion:
+    Description: 'BuildServerless Template Version'
+    Value: '1.0'
+  oStackName:
+    Description: 'Stack Name'
+    Value: !Sub '${AWS::StackName}'
+  oCFDistributionID:
+    Value: !Ref rStaticS3SiteCloudFront
+    Description: CloudFront Distribution ID
+    Export:
+      Name: !Sub ${AWS::StackName}-CFID
+  oS3BucketName:
+    Value: !Ref rStaticS3Site
+    Description: Bucket name of the website
+    Export:
+      Name: !Sub ${AWS::StackName}-S3BucketName
