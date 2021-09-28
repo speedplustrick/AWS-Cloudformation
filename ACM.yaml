@@ -1,0 +1,153 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Creates a certificate to protect domain along with its subdomain.
+
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'ACM Parameters'
+      Parameters:
+      - pCreateACM
+      - pACMCertificateArn
+      - pSiteName
+      - pCloudFrontPriceClass
+
+Parameters: 
+  pCreateACM:
+    Description: Select True if you want to create new Certificate in US East-1 region 
+    Type: String
+    AllowedValues: [true, false]
+  pACMCertificateArn:
+    Description: 'Arn of the ACM Certificate to deploy on CloudFront (US-EAST-1 only), If CreateACM is selected True than its ARN will be considered'
+    Type: String     
+  pSiteName: 
+    Description: 'Use an asterisk (*) to request a wildcard certificate to protect several sites in the same domain'
+    Type: String  
+  pCloudFrontPriceClass:
+    Description: 'Price class of the CloudFront distribution'
+    Type: String
+    Default: 'PriceClass_All'
+    AllowedValues:
+      - 'PriceClass_All'
+      - 'PriceClass_200'
+      - 'PriceClass_100'
+
+Conditions:
+  cCreateCertificate: !Equals [!Ref pCreateACM, true]
+
+Resources: 
+  rACMCertificate: 
+    Type: AWS::CertificateManager::Certificate 
+    Condition: cCreateCertificate
+    Properties: 
+      DomainName: !Ref pSiteName
+      ValidationMethod: DNS
+  ##Bucket##
+  WebsiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: 404.html
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: 'true'
+        BlockPublicPolicy: 'true'
+        IgnorePublicAcls: 'true'
+        RestrictPublicBuckets: 'true' 
+      BucketEncryption: 
+        ServerSideEncryptionConfiguration: 
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: AES256
+
+  ##BucketPolicy##      
+  WebsiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    DependsOn: 
+      - WebsiteBucket
+    Properties:
+      Bucket:
+        !Ref WebsiteBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Deny
+          Principal: '*'
+          Action: s3:*
+          Resource:
+            - !Sub 'arn:aws:s3:::${WebsiteBucket}'
+            - !Sub 'arn:aws:s3:::${WebsiteBucket}/*'
+          Condition: 
+            Bool:
+              aws:SecureTransport: 'false'
+
+
+  ##CFrontOriginAccessIdentity##              
+  CloudFrontOriginAccessIdentity:
+    Type: 'AWS::CloudFront::CloudFrontOriginAccessIdentity'
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Ref WebsiteBucket
+
+  ##CloudFront##
+  WebsiteCloudFront:
+    Type: AWS::CloudFront::Distribution
+    DependsOn:
+    - WebsiteBucket
+    Properties:
+      DistributionConfig:
+        Aliases: !Ref pSiteName
+        Origins:
+        - DomainName:
+            Fn::GetAtt:
+            - WebsiteBucket
+            - RegionalDomainName
+          Id:
+            !Ref WebsiteBucket
+          CustomOriginConfig:
+            HTTPPort: '80'
+            HTTPSPort: '443'
+            OriginProtocolPolicy: http-only
+            OriginAccessIdentity: !Join ["", ["origin-access-identity/cloudfront/", !Ref CloudFrontOAI]]
+        Enabled: 'true'
+        DefaultRootObject: index.html
+        DefaultCacheBehavior:
+          TargetOriginId:
+            !Ref WebsiteBucket
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+          - GET
+          - HEAD
+          - OPTIONS
+          CachedMethods:
+          - GET
+          - HEAD
+          - OPTIONS
+          Compress: false
+          ForwardedValues:
+            QueryString: 'true'
+            Cookies:
+              Forward: all
+            Headers:
+            - Access-Control-Request-Headers
+            - Access-Control-Request-Method
+            - Origin
+        PriceClass: !Ref pCloudFrontPriceClass
+        ViewerCertificate:
+          AcmCertificateArn: !If [cCreateCertificate, !Ref rACMCertificate, !Ref pACMCertificateArn] 
+          MinimumProtocolVersion: TLSv1.1_2016
+          SslSupportMethod: sni-only
+        CustomErrorResponses:
+        - ErrorCode: 404
+          ResponseCode: 200
+          ResponsePagePath: "/index.html"
+        - ErrorCode: 403
+          ResponseCode: 200
+          ResponsePagePath: "/index.html"       
+  CloudFrontOAI:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties: 
+      CloudFrontOriginAccessIdentityConfig: 
+        Comment: !Join ["", ["CloudFront-OAI-", !Select [0, !Ref pSiteName]]]
+
+
+
