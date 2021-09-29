@@ -124,4 +124,4 @@ Resources:
     Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
     Properties: 
       CloudFrontOriginAccessIdentityConfig: 
-        Comment: !Join ["", ["CloudFront-OAI-", !Select [0, !Ref pSiteName]]]         
+        Comment: !Join ["", ["CloudFront-OAI-", !Select [0, !Ref pSiteName]]]

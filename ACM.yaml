@@ -107,7 +107,7 @@ Resources:
             HTTPPort: '80'
             HTTPSPort: '443'
             OriginProtocolPolicy: http-only
-            # OriginAccessIdentity: !Join ["", ["origin-access-identity/cloudfront/", !Ref CloudFrontOAI]]
+            OriginAccessIdentity: !Join ["", ["origin-access-identity/cloudfront/", !Ref CloudFrontOAI]]
         Enabled: 'true'
         DefaultRootObject: index.html
         DefaultCacheBehavior:
@@ -143,11 +143,11 @@ Resources:
         - ErrorCode: 403
           ResponseCode: 200
           ResponsePagePath: "/index.html"       
-  # CloudFrontOAI:
-  #   Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
-  #   Properties: 
-  #     CloudFrontOriginAccessIdentityConfig: 
-  #       Comment: !Join ["", ["CloudFront-OAI-", !Select [0, !Ref pSiteName]]]
+  CloudFrontOAI:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties: 
+      CloudFrontOriginAccessIdentityConfig: 
+        Comment: !Join ["", ["CloudFront-OAI-", !Select [0, !Ref pSiteName]]]
 
 
 
