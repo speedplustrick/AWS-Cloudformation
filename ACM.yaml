@@ -8,6 +8,7 @@ Metadata:
         default: 'ACM Parameters'
       Parameters:
       - pCreateACM
+      - pCertificateDomain
       - pACMCertificateArn
       - pSiteName
       - pCloudFrontPriceClass
@@ -21,8 +22,11 @@ Parameters:
     Description: 'Arn of the ACM Certificate to deploy on CloudFront (US-EAST-1 only), If CreateACM is selected True than its ARN will be considered'
     Type: String     
   pSiteName: 
-    Description: 'Use an asterisk (*) to request a wildcard certificate to protect several sites in the same domain'
+    Description: 'The list of sites to deploy'
     Type: CommaDelimitedList 
+  pCertificateDomain:  
+    Description: 'Use an asterisk (*) to request a wildcard certificate to protect several sites in the same domain'
+    Type: String
   pCloudFrontPriceClass:
     Description: 'Price class of the CloudFront distribution'
     Type: String
@@ -40,7 +44,7 @@ Resources:
     Type: AWS::CertificateManager::Certificate 
     Condition: cCreateCertificate
     Properties: 
-      DomainName: !Ref pSiteName
+      DomainName: !Ref pCertificateDomain
       ValidationMethod: DNS
   ##Bucket##
   WebsiteBucket:
