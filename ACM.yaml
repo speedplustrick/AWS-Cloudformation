@@ -22,7 +22,7 @@ Parameters:
     Type: String     
   pSiteName: 
     Description: 'Use an asterisk (*) to request a wildcard certificate to protect several sites in the same domain'
-    Type: String  
+    Type: CommaDelimitedList 
   pCloudFrontPriceClass:
     Description: 'Price class of the CloudFront distribution'
     Type: String
