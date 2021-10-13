@@ -69,10 +69,10 @@ Resources:
     Properties:
       
       PublicAccessBlockConfiguration:
-        BlockPublicAcls: 'true'
-        IgnorePublicAcls: 'true'
-        BlockPublicPolicy: 'true'
-        RestrictPublicBuckets: 'true'
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: true
+        RestrictPublicBuckets: true
       BucketEncryption:  
         ServerSideEncryptionConfiguration: 
           - ServerSideEncryptionByDefault:
